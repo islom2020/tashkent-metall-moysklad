@@ -23,9 +23,22 @@ yesterday = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 def get_barcode_base64(order_name):
     barcode_class = barcode.get_barcode_class('code128')
+
+    options = {
+        'module_width': 0.2,   # width of one barcode module (default is 0.2)
+        'module_height': 7.0, # height of the barcode (default is 15.0)
+        'quiet_zone': 0.7,     # space on left and right side of barcode (default is 6.5)
+        'font_size': 6,       # size of the text under the barcode (default is 10)
+        'text_distance': 3.0,  # distance between barcode and text (default is 5.0)
+        'write_text': True,    # whether to write the text under the barcode (default is True)
+        'background': 'white', # background color (default is 'white')
+        'foreground': 'black', # foreground (bar) color (default is 'black')
+        'dpi': 300,            # resolution of the image (default is 300)
+    }
+
     my_barcode = barcode_class(order_name, writer=ImageWriter())
     buffer = BytesIO()
-    my_barcode.write(buffer)
+    my_barcode.write(buffer, options)
     buffer.seek(0)
 
     base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
@@ -64,7 +77,7 @@ def get_customer_orders_size():
     url = f"https://api.moysklad.ru/api/remap/1.2/entity/customerorder"
 
     params = {
-        'filter': f'created>={yesterday} 22:00:00.000'
+        'filter': f'moment>={yesterday} 23:00:00.000'
     }
 
     # Make the request
@@ -82,6 +95,8 @@ def get_customer_orders_size():
 
 def update_customer_order_check_number_by_id(order_id, size):
     data = get_customer_order_by_id(order_id)
+    base64_image = get_barcode_base64(data['name'])
+
     # order_number = data['name']
 
     headers = {
@@ -90,12 +105,7 @@ def update_customer_order_check_number_by_id(order_id, size):
     }
 
     payload = {
-        # 'name': data['name'],
-        # 'externalCode': data['externalCode'],
-        # 'moment': data['moment'],
-        # 'applicable': data['applicable'],
-        # 'vatEnabled': data['vatEnabled'],
-        # 'vatIncluded': data['vatIncluded'],
+        
         'attributes': [
             {
                 'meta': {
@@ -106,14 +116,17 @@ def update_customer_order_check_number_by_id(order_id, size):
                 'value': size
             },
             # Barcode
-            # {
-            #     'meta': {
-            #         'href': f'https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata/attributes/{barcode_id}',
-            #         'type': 'attributemetadata',
-            #         'mediaType': 'application/json'
-            #     },
-            #     'value': base64_image
-            # }
+            {
+                'meta': {
+                    'href': f'https://api.moysklad.ru/api/remap/1.2/entity/customerorder/metadata/attributes/{barcode_id}',
+                    'type': 'attributemetadata',
+                    'mediaType': 'application/json'
+                },
+                'file': {
+                    "filename":"barcode.png",
+                    "content":base64_image
+                }
+            }
         ],
 
     }
@@ -132,4 +145,4 @@ def update_customer_order_check_number_by_id(order_id, size):
 
 
 if __name__ == '__main__':
-    get_customer_order_by_id('f3d66931-4c6a-11ef-0a80-0d8e003de05f')
+    get_customer_orders_size()

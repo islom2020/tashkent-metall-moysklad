@@ -15,6 +15,8 @@ def webhook():
         print("Received webhook data:", data)
 
         size = webhook_moysklad.moysklad_api.get_customer_orders_size()
+        print(size)
+
         webhook_moysklad.moysklad_api.update_customer_order_check_number_by_id(order_id, size)
 
         # Respond with a success message
