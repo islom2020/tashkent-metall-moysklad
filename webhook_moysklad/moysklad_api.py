@@ -77,7 +77,7 @@ def get_customer_orders_size():
     url = f"https://api.moysklad.ru/api/remap/1.2/entity/customerorder"
 
     params = {
-        'filter': f'moment>={yesterday} 23:00:00.000'
+        'filter': f'created>={today_date} 00:00:00.000'
     }
 
     # Make the request
